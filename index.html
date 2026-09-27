@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taiwan Healthcare Access</title>
+<meta name="description" content="Village-level drive-time healthcare accessibility in Taiwan (E2SFCA, 2024).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Roboto+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/aos@2.3.4/dist/aos.css">
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<style>
+:root {
+  --green:      #16A34A;
+  --green-dark: #15803D;
+  --green-bg:   #F0FDF4;
+  --red:        #DC2626;
+  --red-bg:     #FFF5F5;
+  --amber:      #D97706;
+  --amber-bg:   #FFFBEB;
+  --blue:       #2563EB;
+  --blue-bg:    #EFF6FF;
+  --text:       #111827;
+  --text-2:     #6B7280;
+  --text-3:     #9CA3AF;
+  --border:     #E5E7EB;
+  --surface:    #F9FAFB;
+  --white:      #FFFFFF;
+  --shadow-sm:  0 1px 2px rgba(0,0,0,.06);
+  --shadow:     0 2px 8px rgba(0,0,0,.08);
+  --r:          8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text);
+  background: var(--surface);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── Page layout ── */
+.page { max-width: 1180px; margin: 0 auto; padding: 48px 40px 80px; }
+
+/* ── Hero ── */
+.hero {
+  margin-bottom: 56px;
+  min-height: 85vh;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.hero-eyebrow {
+  font-size: 11px; font-weight: 600; color: var(--green); text-transform: uppercase;
+  letter-spacing: .08em; margin-bottom: 20px;
+}
+.hero-title {
+  font-size: 34px; font-weight: 700; color: var(--text); line-height: 1.25;
+  margin-bottom: 10px; letter-spacing: -.02em;
+}
+.hero-subtitle { font-size: 15px; color: var(--text-2); max-width: 720px; line-height: 1.7; }
+.hero-scroll { margin-top: 56px; font-size: 12px; color: var(--text-3); letter-spacing: .06em; }
+
+/* ── Stat row ── */
+.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 56px; }
+.stat-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 20px 22px; box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.stat-card.accent-red  { border-left: 3px solid var(--red);   }
+.stat-card.accent-amber{ border-left: 3px solid var(--amber); }
+.stat-card.accent-green{ border-left: 3px solid var(--green); }
+.stat-card.accent-blue { border-left: 3px solid var(--blue);  }
+.stat-label { font-size: 11px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: .05em; }
+.stat-val   { font-size: 36px; font-weight: 700; line-height: 1; letter-spacing: -.02em; font-family: 'Roboto Mono', monospace; }
+.stat-val.red   { color: var(--red); }
+.stat-val.amber { color: var(--amber); }
+.stat-val.green { color: var(--green-dark); }
+.stat-val.blue  { color: var(--blue); }
+.stat-desc { font-size: 12px; color: var(--text-3); }
+
+/* ── Sections ── */
+section { margin-bottom: 64px; }
+.section-header { margin-bottom: 28px; }
+.section-eyebrow {
+  font-size: 11px; font-weight: 600; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px;
+}
+.section-title { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -.015em; margin-bottom: 8px; }
+.section-desc  { font-size: 14px; color: var(--text-2); max-width: 100%; line-height: 1.65; }
+
+/* 2-col layout */
+.two-col { display: grid; grid-template-columns: 1fr 1.6fr; gap: 32px; align-items: start; }
+.two-col-prose { display: flex; flex-direction: column; gap: 16px; }
+.prose-block { background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 18px 20px; }
+.prose-block p { font-size: 13px; color: var(--text-2); line-height: 1.7; }
+.prose-block strong { color: var(--text); font-weight: 600; }
+.prose-big { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; margin-bottom: 4px; font-family: 'Roboto Mono', monospace; }
+.prose-big-desc { font-size: 12px; color: var(--text-3); }
+
+/* Chart card */
+.chart-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 22px 24px; box-shadow: var(--shadow-sm);
+}
+.chart-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.chart-desc  { font-size: 12px; color: var(--text-3); margin-bottom: 16px; line-height: 1.5; }
+
+/* Rank controls inline */
+.rank-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.radio-group { display: flex; gap: 4px; }
+.radio-btn {
+  padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px;
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  background: var(--white); color: var(--text-2); font-family: inherit;
+  transition: .15s;
+}
+.radio-btn.active { background: var(--green-bg); border-color: var(--green); color: var(--green-dark); }
+.range-wrap { display: flex; align-items: center; gap: 6px; }
+.range-wrap span { font-size: 12px; color: var(--text-3); }
+input[type=range] { accent-color: var(--green); width: 100px; }
+#topn-val { font-size: 12px; font-weight: 600; color: var(--text); min-width: 20px; }
+
+/* Expander */
+.expander { border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 12px; overflow: hidden; }
+.exp-hdr {
+  padding: 11px 16px; font-size: 13px; font-weight: 500;
+  background: var(--surface); cursor: pointer;
+  display: flex; align-items: center; gap: 8px; user-select: none;
+}
+.exp-hdr:hover { background: #F3F4F6; }
+.exp-icon { font-size: 9px; color: var(--text-3); transition: transform .2s; }
+.expander.open .exp-icon { transform: rotate(90deg); }
+.exp-body { padding: 16px; display: none; }
+.expander.open .exp-body { display: block; }
+
+/* Table */
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--r); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th {
+  text-align: left; padding: 9px 14px;
+  font-size: 11px; font-weight: 600; color: var(--text-2);
+  text-transform: uppercase; letter-spacing: .05em;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+tbody td { padding: 9px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--surface); }
+
+/* Badge */
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 9999px;
+  font-size: 11px; font-weight: 500; white-space: nowrap;
+}
+.badge-red    { background: var(--red-bg);   color: #991B1B; }
+.badge-amber  { background: var(--amber-bg); color: #92400E; }
+.badge-green  { background: var(--green-bg); color: #166534; }
+
+/* Divider */
+.divider { border: none; border-top: 1px solid var(--border); margin: 64px 0; }
+
+/* ── Dot Nav ── */
+.dot-nav {
+  position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
+  z-index: 90; display: flex; flex-direction: column; gap: 12px; align-items: flex-end;
+}
+.dot-nav-item {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  padding: 2px 0;
+}
+.dot-nav-item:hover .dot-nav-dot { background: var(--green); }
+.dot-nav-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #D1D5DB;
+  transition: background .2s, transform .2s; flex-shrink: 0;
+}
+.dot-nav-item.active .dot-nav-dot { background: var(--green); transform: scale(1.5); }
+.dot-nav-label {
+  font-size: 11px; font-weight: 500; color: var(--text-2);
+  white-space: nowrap; opacity: 0; pointer-events: none;
+  transition: opacity .15s; background: var(--white);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 2px 7px; box-shadow: var(--shadow-sm);
+}
+.dot-nav:hover .dot-nav-label { opacity: 1; }
+@media (max-width: 1240px) { .dot-nav { display: none; } }
+
+/* Cluster rep grid */
+.rep-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.rep-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px;
+}
+.rep-card-title { font-size: 12px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.rep-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.rep-table td { padding: 3px 0; color: var(--text-2); }
+.rep-table td:first-child { color: var(--text); line-height: 1.35; padding: 4px 0; }
+#cluster-summary-table td:first-child { min-width: 170px; }
+.rep-table td:last-child { color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Sensitivity table */
+.sens-table { border-collapse: collapse; font-size: 13px; }
+.sens-table th, .sens-table td { padding: 8px 16px; border: 1px solid var(--border); text-align: center; }
+.sens-table th { background: var(--surface); font-size: 11px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: .04em; }
+.sens-table td.base { font-weight: 700; color: var(--green-dark); background: var(--green-bg); }
+
+/* ── Responsive grid helpers ── */
+/* grid children may shrink below table min-content; tables scroll inside .table-wrap */
+.two-col > *, .cluster-grid > *, .highrisk-grid > * { min-width: 0; }
+.highrisk-grid { display: grid; grid-template-columns: 1fr 1.8fr; gap: 28px; align-items: start; }
+.cluster-grid  { display: grid; grid-template-columns: 1fr 1fr;   gap: 24px; align-items: start; }
+
+@media (max-width: 960px) {
+  .filter-bar    { padding: 8px 16px; gap: 12px; flex-wrap: wrap; }
+  .page          { padding: 32px 20px 60px; }
+  .hero-title    { font-size: 26px; }
+  .hero-subtitle { max-width: 100%; }
+  .stat-row      { grid-template-columns: repeat(2, 1fr); }
+  .two-col       { grid-template-columns: 1fr; }
+  .highrisk-grid { grid-template-columns: 1fr; }
+  .cluster-grid  { grid-template-columns: 1fr; }
+  .rep-grid      { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .stat-row      { grid-template-columns: 1fr; }
+  .rep-grid      { grid-template-columns: 1fr; }
+  .hero-title    { font-size: 20px; }
+  .section-title { font-size: 18px; }
+  .filter-logo-text { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Dot Nav ── -->
+<nav class="dot-nav" id="dot-nav">
+  <div class="dot-nav-item" data-target="sec-hero">
+    <span class="dot-nav-label">Overview</span>
+    <span class="dot-nav-dot"></span>
+  </div>
+  <div class="dot-nav-item" data-target="sec-problem">
+    <span class="dot-nav-label">Blind spots</span>
+    <span class="dot-nav-dot"></span>
+  </div>
+  <div class="dot-nav-item" data-target="sec-method">
+    <span class="dot-nav-label">Method</span>
+    <span class="dot-nav-dot"></span>
+  </div>
+  <div class="dot-nav-item" data-target="sec-result">
+    <span class="dot-nav-label">Results</span>
+    <span class="dot-nav-dot"></span>
+  </div>
+  <div class="dot-nav-item" data-target="sec-cluster">
+    <span class="dot-nav-label">Clusters</span>
+    <span class="dot-nav-dot"></span>
+  </div>
+  <div class="dot-nav-item" data-target="sec-policy">
+    <span class="dot-nav-label">Policy</span>
+    <span class="dot-nav-dot"></span>
+  </div>
+</nav>
+
+<!-- ── Page ── -->
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero" id="sec-hero">
+    <div class="hero-eyebrow">E2SFCA · 2024 cross-section · village level · Taiwan</div>
+    <h1 class="hero-title">Taiwan's highest-risk villages<br>are not where you'd expect</h1>
+    <p class="hero-subtitle">Not the rural east, but Taoyuan (16 villages), Miaoli (13), Keelung (11) and Hsinchu County (11) lead the country.<br>County-level physician-density rankings systematically hide this.</p>
+    <div class="hero-scroll">Scroll down to see why ↓</div>
+  </div>
+
+  <!-- Section 1: Blind spots -->
+  <section id="sec-problem" data-aos="fade-up" data-aos-duration="600">
+    <div class="section-header">
+      <div class="section-eyebrow">The problem</div>
+      <h2 class="section-title">What do current metrics miss?</h2>
+      <p class="section-desc">Taiwan usually compares healthcare resources with county-level rankings such as physicians per 10,000 residents. These metrics have two structural blind spots that hide the places that are actually underserved.</p>
+    </div>
+
+    <div class="two-col">
+      <div class="two-col-prose">
+        <div class="prose-block">
+          <p><strong>Blind spot 1: travel time is ignored</strong><br>Within one county, reaching the nearest hospital from a remote township can take more than an hour on mountain roads. A county average erases that distance. Hualien ranks 3rd nationally in physician density, yet villages in its Zhuoxi and Fuli townships sit around the lowest 11% of all villages in accessibility.</p>
+        </div>
+        <div class="prose-block">
+          <p><strong>Blind spot 2: averages hide within-county inequality</strong><br>Urbanized counties such as Taoyuan and Miaoli look fine overall, but older residents stay in fringe townships while care concentrates in city centers. These places are administratively "urban", so they fall outside the official remote-area designation, even though access there is poor.</p>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Comparing metrics</div>
+        <div class="chart-desc" style="margin-bottom:16px">What each metric can and cannot capture</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th><th>Unit</th><th>Travel time</th><th>Within-county gaps</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Physicians per 10,000</td>
+                <td style="color:var(--text-2)">County</td>
+                <td style="color:var(--red)">✗</td>
+                <td style="color:var(--red)">✗</td>
+              </tr>
+              <tr>
+                <td>Facility density</td>
+                <td style="color:var(--text-2)">Township</td>
+                <td style="color:var(--red)">✗</td>
+                <td style="color:var(--amber)">Partly</td>
+              </tr>
+              <tr style="background:var(--green-bg)">
+                <td style="color:var(--green-dark); font-weight:600">E2SFCA (this study)</td>
+                <td style="color:var(--green-dark)">Village</td>
+                <td style="color:var(--green-dark)">✓</td>
+                <td style="color:var(--green-dark)">✓</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Section 2: Method -->
+  <section id="sec-method" data-aos="fade-up" data-aos-duration="600">
+    <div class="section-header">
+      <div class="section-eyebrow">Method</div>
+      <h2 class="section-title">E2SFCA: village level, real drive times</h2>
+      <p class="section-desc">The Enhanced Two-Step Floating Catchment Area (E2SFCA) method estimates how much physician supply each place can realistically reach, accounting for competing demand. Instead of straight-line distance it uses road-network drive times from a self-hosted OSRM routing engine (18.1 million village–facility pairs) for all 7,616 villages. Scores are shown relative to the national average (1.0x).</p>
+    </div>
+
+    <div class="two-col">
+      <div class="two-col-prose">
+        <div class="prose-block">
+          <div style="font-size:13px; color:var(--text-2); margin-bottom:4px">Villages in remote townships have only</div>
+          <div class="prose-big" id="prose-ratio">—</div>
+          <div class="prose-big-desc" id="prose-ratio-desc">of the accessibility of non-remote villages (median)</div>
+          <div style="font-size:11px; color:var(--text-3); margin-top:6px">Remote = 86 of 368 townships under the Ministry of the Interior definition (population density below one-fifth of the national average, or offshore island counties). Zero-access villages excluded from this ratio.</div>
+        </div>
+        <div class="expander" id="exp-method">
+          <div class="exp-hdr" onclick="toggleExp('exp-method')">
+            <span class="exp-icon">▶</span> Distance-decay design
+          </div>
+          <div class="exp-body">
+            <table class="sens-table" style="margin-bottom:10px">
+              <thead><tr><th>Drive time</th><th>Weight</th></tr></thead>
+              <tbody>
+                <tr><td>0–10 min</td><td>1.00</td></tr>
+                <tr><td>10–20 min</td><td>0.68</td></tr>
+                <tr><td>20–30 min</td><td>0.22</td></tr>
+                <tr><td>30–60 min</td><td>0.10</td></tr>
+              </tbody>
+            </table>
+            <p style="font-size:12px; color:var(--text-3)">The first three zones follow Luo &amp; Qi (2009). The fourth zone (30–60 min) extends the halving logic of Taiwanese applications, which were metro-scale and stopped at 15 km. 41.7% of all drive-time pairs fall in the 30–60 min band, mostly in mountain villages, and the 60-min cap still covers 98.8% of pairs. Compared with a hard 30-min cutoff, zero-access villages drop from 78 to 14.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Accessibility by urban–rural class</div>
+        <div class="chart-desc">Relative to the national average; the box marks the median and quartiles, width shows where villages concentrate. Zero-access villages (14) are excluded.</div>
+        <div id="violin-chart"></div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Section 3: Results -->
+  <section id="sec-result" data-aos="fade-up" data-aos-duration="600">
+    <div class="section-header">
+      <div class="section-eyebrow">Results</div>
+      <h2 class="section-title">Where is access actually lacking?</h2>
+      <p class="section-desc"><strong>96 high-risk villages</strong> in two groups: 82 villages with low access (below the national 25th percentile) <em>and</em> a large elderly population (at least 797 residents aged 65+, the national 75th percentile), plus 14 villages with zero access within 60 minutes. The county breakdown contradicts the common assumption that the problem is concentrated in the east.</p>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:28px">
+      <div class="chart-title">High-risk villages by county</div>
+      <div class="chart-desc">Taoyuan leads, followed by Miaoli, Hsinchu County and Keelung, none of which are the eastern counties people usually picture</div>
+      <div id="county-chart"></div>
+    </div>
+
+    <div class="expander" id="exp-thresh" style="margin-bottom:28px">
+      <div class="exp-hdr" onclick="toggleExp('exp-thresh')">
+        <span class="exp-icon">▶</span> Threshold sensitivity (why the 25th / 75th percentiles?)
+      </div>
+      <div class="exp-body">
+        <p style="font-size:13px; margin-bottom:14px; line-height:1.7">Using national percentiles keeps the definition objective and easy to explain. The 25th-percentile access threshold is about 0.57x the national average. The table shows how the low-access × high-elderly group changes as both thresholds move.</p>
+        <table class="sens-table">
+          <thead><tr><th>Access \ elderly threshold</th><th>&gt; Q70</th><th>&gt; Q75 (base)</th><th>&gt; Q80</th></tr></thead>
+          <tbody>
+            <tr><td>&lt; Q20</td><td>69</td><td>46</td><td>32</td></tr>
+            <tr><td><strong>&lt; Q25 (base)</strong></td><td>113</td><td class="base">82</td><td>50</td></tr>
+            <tr><td>&lt; Q30</td><td>171</td><td>128</td><td>84</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:12px; color:var(--text-3); margin-top:10px">The baseline sits at the midpoint of the grid. Adding the 14 zero-access villages, the high-risk total ranges from 46 to 185 depending on thresholds.</p>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Township accessibility ranking</div>
+      <div class="chart-desc">Median village E2SFCA score per township, relative to the national average. Red = remote township, blue = non-remote.</div>
+      <div class="rank-controls">
+        <div class="radio-group">
+          <button class="radio-btn active" data-dir="asc" onclick="setRankDir(this)">Lowest (high risk)</button>
+          <button class="radio-btn" data-dir="desc" onclick="setRankDir(this)">Highest</button>
+        </div>
+        <div class="range-wrap">
+          <span>Show top</span>
+          <input type="range" id="topn-slider" min="10" max="50" step="5" value="20" oninput="setTopN(this)">
+          <span id="topn-val">20</span>
+        </div>
+      </div>
+      <div id="rank-chart"></div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Section 4: Clusters -->
+  <section id="sec-cluster" data-aos="fade-up" data-aos-duration="600">
+    <div class="section-header">
+      <div class="section-eyebrow">Cluster analysis</div>
+      <h2 class="section-title">K-means: six vulnerability profiles</h2>
+      <p class="section-desc">353 townships clustered on three features: median E2SFCA score, share of residents aged 65+, and share of zero-access villages. K=6 was chosen by silhouette score (0.418, the highest for K≥3; K=2 only split remote from non-remote). Different profiles have different causes, so they call for different interventions.</p>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:24px">
+      <div class="chart-title">Accessibility vs. share of elderly residents</div>
+      <div class="chart-desc">Each dot is a township. Further left = lower access; higher = older population. Dot size reflects the share of zero-access villages. Note that zero-access mountain townships (large red dots) have relatively young populations.</div>
+      <div id="scatter-chart"></div>
+    </div>
+
+    <div class="cluster-grid">
+      <div>
+        <h3 style="font-size:14px; font-weight:600; margin-bottom:12px">Cluster summary</h3>
+        <div class="table-wrap">
+          <table id="cluster-summary-table">
+            <thead>
+              <tr>
+                <th>Cluster</th><th>Townships</th><th>Access</th>
+                <th>65+ share</th><th>Zero-access %</th><th>Remote</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h3 style="font-size:14px; font-weight:600; margin-bottom:12px">Lowest-access townships per cluster (top 5)</h3>
+        <div class="rep-grid" id="rep-towns"></div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Section 5: Policy -->
+  <section id="sec-policy" data-aos="fade-up" data-aos-duration="600">
+    <div class="section-header">
+      <div class="section-eyebrow">Policy implications</div>
+      <h2 class="section-title">Different vulnerabilities need different responses</h2>
+      <p class="section-desc">The 96 high-risk villages are not one group. All 82 low-access × high-elderly villages are in townships that are <em>not</em> officially remote, while all 14 zero-access villages are in mountain indigenous townships. Allocating resources by county or by the remote-area label alone will keep missing the urban fringe.</p>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:32px">
+      <div class="chart-title">Suggested directions by profile</div>
+      <div class="table-wrap" style="margin-top:14px">
+        <table>
+          <thead>
+            <tr><th>Profile</th><th>Examples</th><th>Main driver</th><th>Suggested direction</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-red">Mountain indigenous (zero access)</span></td>
+              <td style="color:var(--text-2)">Jianshi (Hsinchu), Alishan (Chiayi), Wanrong (Hualien)</td>
+              <td style="color:var(--text-2)">Terrain isolation, no local facility within 60 min</td>
+              <td>Increase mobile-clinic (IDS) coverage and frequency</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-amber">Urban fringe (non-remote)</span></td>
+              <td style="color:var(--text-2)">Longtan &amp; Yangmei (Taoyuan), Zhushan (Nantou), Miaoli City</td>
+              <td style="color:var(--text-2)">Care concentrated in city centers; not covered by the remote-area label</td>
+              <td>Base eligibility on measured access, not administrative status</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-amber">General remote</span></td>
+              <td style="color:var(--text-2)">Nanzhuang (Miaoli), Fuli (Hualien)</td>
+              <td style="color:var(--text-2)">Out-migration, ageing population, long trips to care</td>
+              <td>Aging-in-place care and patient transport</td>
+            </tr>
+            <tr>
+              <td><span class="badge" style="background:var(--blue-bg);color:#1e40af">Offshore islands</span></td>
+              <td style="color:var(--text-2)">Penghu, Kinmen, Lienchiang</td>
+              <td style="color:var(--text-2)">Not assessed: no road link to the main island (Dongyin excepted)</td>
+              <td>Needs a separate sea/air transfer analysis</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="margin-bottom:28px">
+      <h3 style="font-size:14px; font-weight:600; margin-bottom:12px">All high-risk villages</h3>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px">
+        <div class="stat-card accent-red" style="padding:14px 16px">
+          <div class="stat-label" style="font-size:10px">High-risk villages</div>
+          <div class="stat-val red" style="font-size:26px" id="hr-count">—</div>
+        </div>
+        <div class="stat-card accent-red" style="padding:14px 16px">
+          <div class="stat-label" style="font-size:10px">Of which zero access</div>
+          <div class="stat-val red" style="font-size:26px" id="hr-zero">—</div>
+        </div>
+        <div class="stat-card accent-amber" style="padding:14px 16px">
+          <div class="stat-label" style="font-size:10px">Mean 65+ share</div>
+          <div class="stat-val amber" style="font-size:26px" id="hr-elderly">—</div>
+        </div>
+      </div>
+      <div class="table-wrap" style="max-height:420px; overflow-y:auto">
+        <table id="hr-table">
+          <thead>
+            <tr>
+              <th>Village</th><th>Risk</th><th>Class</th>
+              <th>Access (vs national)</th><th>65+ share</th><th>65+ residents</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="expander" id="exp-limitation">
+      <div class="exp-hdr" onclick="toggleExp('exp-limitation')">
+        <span class="exp-icon">▶</span> Limitations
+      </div>
+      <div class="exp-body">
+        <p style="font-size:13px; line-height:1.8; color:var(--text-2)">
+          <strong>1. Demand points are village centroids</strong>: the finest public resolution is the village, so polygon centroids stand in for population-weighted centers. This may understate travel times in large rural villages.<br><br>
+          <strong>2. Geocoding misses are uneven</strong>: 7.3% of facilities in mountain indigenous townships could not be geocoded, vs 2.4% in non-remote townships. Missing rural facilities understate rural supply, so the urban–rural gap may be slightly overstated (impact on mountain-township supply &lt; 8%).<br><br>
+          <strong>3. Mobile clinics are not modelled</strong>: available mobile-clinic data does not match the 2024 analysis year. High-risk villages already served by mobile clinics may have better access than shown.<br><br>
+          <strong>4. Offshore islands are excluded</strong>: 15 island townships have no road link to the main island. Their absence from the high-risk list reflects coverage, not safety.<br><br>
+          <strong>5. Cross-sectional design</strong>: this is a 2024 snapshot and does not show change over time.
+        </p>
+      </div>
+    </div>
+
+    <p style="font-size:12px; color:var(--text-3); margin-top:32px; line-height:1.7">
+      Data: Ministry of Health and Welfare (facilities &amp; physicians, 2024-12-31), Ministry of the Interior (village population by age, 2024), National Health Insurance Administration, National Land Surveying and Mapping Center (village boundaries), OpenStreetMap contributors (road network). Place names follow official romanization where available.<br>
+      Analysis &amp; dashboard: Wei-Chi (Jill) Chiou
+    </p>
+  </section>
+
+</div><!-- .page -->
+
+
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script src="dashboard_data.js"></script>
+<script>
+const D = window.DASHBOARD_DATA;
+
+const RURAL_LABELS = {
+  non_remote:'Non-remote', general_remote:'General remote',
+  mountain_indigenous:'Mountain indigenous', island:'Offshore island',
+};
+const RURAL_ORDER  = ['mountain_indigenous','island','general_remote','non_remote'];
+const RURAL_COLORS = {
+  mountain_indigenous:'#a50026', island:'#d73027',
+  general_remote:'#fdae61', non_remote:'#4575b4',
+};
+const CFG  = { displayModeBar: false, responsive: true };
+const FONT = { family:"'Inter',system-ui,sans-serif", size:12, color:'#111827' };
+
+const state = { rankDir:'asc', topN:20 };
+const NARROW = window.innerWidth < 600;
+
+// helpers
+function median(arr) {
+  if (!arr.length) return NaN;
+  const s = [...arr].sort((a,b)=>a-b);
+  const m = Math.floor(s.length/2);
+  return s.length%2 ? s[m] : (s[m-1]+s[m])/2;
+}
+function filterVillages(cityOnly=false) {
+  return cityOnly ? D.villages.filter(d=>d.rel>0) : D.villages;
+}
+
+// ── Expanders ──────────────────────────────────────────────────────────────
+function toggleExp(id){ document.getElementById(id).classList.toggle('open'); }
+
+// ── Method ratio (prose-ratio in sec-method) ───────────────────────────────
+function renderKPIs(){
+  const vills = filterVillages();
+  const remoteVals = vills.filter(d=>d.is_remote&&!d.is_zero_access).map(d=>d.rel);
+  const urbanVals  = vills.filter(d=>!d.is_remote&&!d.is_zero_access).map(d=>d.rel);
+  const medR = median(remoteVals), medU = median(urbanVals);
+  const ratio = (medU>0&&!isNaN(medR)) ? medR/medU : NaN;
+  document.getElementById('prose-ratio').textContent = isNaN(ratio)?'N/A':(ratio*100).toFixed(1)+'%';
+  document.getElementById('prose-ratio-desc').textContent = (!isNaN(medR)&&!isNaN(medU))
+    ? `of non-remote villages' accessibility (medians: remote ${medR.toFixed(2)}x vs non-remote ${medU.toFixed(2)}x the national average)` : '';
+}
+
+// ── Violin ─────────────────────────────────────────────────────────────────
+function renderViolinChart(){
+  const cityOnly = filterVillages(true).filter(d=>d.rel>0);
+  const traces = RURAL_ORDER.map(key=>({
+    type:'violin',
+    y: cityOnly.filter(d=>d.rural_4way===key).map(d=>d.rel),
+    name: RURAL_LABELS[key],
+    box:{visible:true}, points:false, meanline:{visible:false},
+    marker:{color:RURAL_COLORS[key]},
+    line:{color:RURAL_COLORS[key]},
+    fillcolor:RURAL_COLORS[key]+'35',
+  }));
+  Plotly.react('violin-chart',traces,{
+    height:380, margin:{l:60,r:16,t:10,b:40},
+    yaxis:{title:'Accessibility (national average = 1.0x)',zeroline:false,gridcolor:'#F3F4F6'},
+    xaxis:{gridcolor:'#F3F4F6'},
+    showlegend:false,
+    shapes:[{type:'line',x0:-0.5,x1:3.5,y0:1,y1:1,line:{dash:'dot',color:'#D1D5DB',width:1.5}}],
+    annotations:[{x:3.5,y:1,xanchor:'right',yanchor:'bottom',showarrow:false,
+      text:'National average',font:{size:11,color:'#9CA3AF'}}],
+    plot_bgcolor:'white',paper_bgcolor:'white',font:FONT,
+  },CFG);
+}
+
+// ── Rank chart ─────────────────────────────────────────────────────────────
+function renderRankChart(){
+  const {rankDir,topN} = state;
+  let data = D.town_rank.slice();
+  data = rankDir==='asc'
+    ? data.sort((a,b)=>a.relative-b.relative).slice(0,topN)
+    : data.sort((a,b)=>b.relative-a.relative).slice(0,topN).reverse();
+
+  const xMax = Math.max(...data.map(d=>d.relative));
+  Plotly.react('rank-chart',[{
+    type:'bar', x:data.map(d=>d.relative), y:data.map(d=>NARROW ? d.label.replace(/ (Township|District),/, ',') : d.label),
+    orientation:'h',
+    marker:{color:data.map(d=>d.is_remote?'#DC2626':'#2563EB')},
+    text:data.map(d=>d.relative.toFixed(2)+'x'), textposition:'outside',
+    hovertemplate:'%{y}<br>%{x:.4f}x national average<extra></extra>',
+  }],{
+    height:Math.max(280,topN*26),
+    margin:NARROW ? {l:150,r:44,t:10,b:50} : {l:220,r:80,t:10,b:50},
+    xaxis:{title:'Accessibility (national average = 1.0x)',gridcolor:'#F3F4F6', range:[-xMax*0.03, xMax*(NARROW ? 1.4 : 1.12)]},
+    yaxis:{autorange:'reversed', automargin:false, ticklabelposition:'outside', tickpad:20},
+    shapes:[{type:'line',x0:1,x1:1,y0:-0.5,y1:data.length-0.5,
+      line:{dash:'dot',color:'#D1D5DB',width:1.5}}],
+    plot_bgcolor:'white',paper_bgcolor:'white',font:FONT,showlegend:false,
+  },CFG);
+}
+function setRankDir(btn){
+  state.rankDir = btn.dataset.dir;
+  document.querySelectorAll('[data-dir]').forEach(b=>b.classList.toggle('active',b===btn));
+  renderRankChart();
+}
+function setTopN(input){
+  state.topN = +input.value;
+  document.getElementById('topn-val').textContent = input.value;
+  renderRankChart();
+}
+
+// ── High risk ──────────────────────────────────────────────────────────────
+function renderHighRisk(){
+  const hr = D.high_risk;
+  const zeroCount = hr.filter(d=>d.is_zero_access).length;
+  const avgEl = hr.length ? hr.reduce((s,d)=>s+(d.elderly_ratio||0),0)/hr.length : 0;
+
+  document.getElementById('hr-count').textContent   = hr.length;
+  document.getElementById('hr-zero').textContent    = zeroCount;
+  document.getElementById('hr-elderly').textContent = (avgEl*100).toFixed(1)+'%';
+
+  const cc = {};
+  hr.forEach(d=>{cc[d.county]=(cc[d.county]||0)+1;});
+  const sorted = Object.entries(cc).sort((a,b)=>b[1]-a[1]);
+  const maxN = Math.max(...sorted.map(d=>d[1]),1);
+
+  Plotly.react('county-chart',[{
+    type:'bar', x:sorted.map(d=>d[1]), y:sorted.map(d=>d[0]),
+    orientation:'h',
+    marker:{color:sorted.map(d=>`rgba(220,38,38,${0.3+0.7*d[1]/maxN})`)},
+    text:sorted.map(d=>d[1]), textposition:'outside',
+    hovertemplate:'%{y}: %{x} villages<extra></extra>',
+  }],{
+    height:Math.max(160,sorted.length*25),
+    margin:{l:NARROW ? 110 : 130,r:40,t:6,b:40},
+    xaxis:{title:'High-risk villages',gridcolor:'#F3F4F6',range:[0,maxN*1.15]},
+    yaxis:{autorange:'reversed', automargin:false, ticksuffix:'  '},
+    plot_bgcolor:'white',paper_bgcolor:'white',font:FONT,
+  },CFG);
+
+  document.querySelector('#hr-table tbody').innerHTML = hr.map(d=>`
+    <tr>
+      <td>${d.village}, ${d.town}, ${d.county}</td>
+      <td><span class="badge ${d.is_zero_access?'badge-red':'badge-amber'}">${d.risk_reason_label}</span></td>
+      <td>${d.rural_4way}</td>
+      <td>${d.rel}</td>
+      <td>${d.elderly_pct}</td>
+      <td>${d.P_65plus.toLocaleString()}</td>
+    </tr>`).join('');
+}
+
+// ── Cluster ────────────────────────────────────────────────────────────────
+function renderCluster(){
+  const km = D.kmeans_scatter;
+
+  const groups={};
+  km.forEach(d=>{
+    if(!groups[d.cluster_label])
+      groups[d.cluster_label]={x:[],y:[],sz:[],txt:[],color:d.cluster_color};
+    groups[d.cluster_label].x.push(d.A_v1_113_median);
+    groups[d.cluster_label].y.push(d.P_65plus_ratio);
+    groups[d.cluster_label].sz.push(Math.max(7,(d.zero_access_pct||0)*200));
+    groups[d.cluster_label].txt.push(`${d.town}, ${d.county}<br>Population ${(d.P_total_sum||0).toLocaleString()}`);
+  });
+
+  const traces = Object.entries(groups).map(([lbl,g])=>({
+    type:'scatter',mode:'markers',name:lbl,x:g.x,y:g.y,
+    marker:{color:g.color,size:g.sz,opacity:.78,line:{width:0}},
+    text:g.txt,
+    hovertemplate:'%{text}<br>Accessibility: %{x:.4f}<br>65+ share: %{y:.1%}<extra></extra>',
+  }));
+
+  Plotly.react('scatter-chart',traces,{
+    height:NARROW ? 520 : 420, margin:NARROW ? {l:50,r:10,t:10,b:50} : {l:60,r:160,t:10,b:50},
+    xaxis:{title:'Median E2SFCA accessibility (2024)',gridcolor:'#F3F4F6'},
+    yaxis:{title:'Share of residents aged 65+',tickformat:'.0%',gridcolor:'#F3F4F6'},
+    plot_bgcolor:'white',paper_bgcolor:'white',font:FONT,
+    legend:NARROW ? {orientation:'h',x:0,y:-0.22,bgcolor:'rgba(0,0,0,0)'} : {x:1.02,y:1,bgcolor:'rgba(0,0,0,0)'},
+  },CFG);
+
+  document.querySelector('#cluster-summary-table tbody').innerHTML =
+    D.kmeans_summary.map(d=>`
+      <tr>
+        <td><span class="dot" style="background:${d.cluster_color}"></span>${d.cluster_label}</td>
+        <td>${d.town_count}</td><td>${d.rel}</td>
+        <td>${(d.elderly_median*100).toFixed(1)}%</td>
+        <td>${(d.zero_pct_mean*100).toFixed(1)}%</td>
+        <td>${d.remote_count}</td>
+      </tr>`).join('');
+
+  document.getElementById('rep-towns').innerHTML =
+    Object.entries(D.kmeans_rep_towns).map(([,g])=>`
+      <div class="rep-card" style="border-top:3px solid ${g.color}">
+        <div class="rep-card-title">
+          <span class="dot" style="background:${g.color}"></span>${g.label}
+        </div>
+        <table class="rep-table">
+          <tbody>${g.towns.map(t=>`
+            <tr>
+              <td>${t.town}<br><span style="color:var(--text-3)">${t.county}</span></td><td>${t.rel}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`).join('');
+}
+
+// ── Main render ────────────────────────────────────────────────────────────
+function render(){
+  renderKPIs();
+  renderViolinChart();
+  renderRankChart();
+  renderHighRisk();
+  renderCluster();
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+render();
+
+AOS.init({ once: true, offset: 60 });
+
+// ── Dot Nav ────────────────────────────────────────────────────────────────
+(function(){
+  const sections = ['sec-hero','sec-problem','sec-method','sec-result','sec-cluster','sec-policy'];
+  const items = document.querySelectorAll('.dot-nav-item');
+
+  items.forEach(item => {
+    item.addEventListener('click', () => {
+      const el = document.getElementById(item.dataset.target);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.id;
+        items.forEach(item => item.classList.toggle('active', item.dataset.target === id));
+      }
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -65% 0px' });
+
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) obs.observe(el);
+  });
+})();
+</script>
+</body>
+</html>
